@@ -1,30 +1,146 @@
 # Go Unit Test
 
-This project demonstrates a simple Go application with unit tests.
+Project latihan belajar **unit testing di Golang**. Isinya contoh penggunaan paket `testing` bawaan Go, library [testify](https://github.com/stretchr/testify) (`assert`, `require`, dan `mock`), serta `benchmark`.
 
-## Project Structure
-go.mod helper/ hello_world.go hello_world_test.go README.md
+## Struktur Project
 
+```
+go-unit-test/
+├── entity/
+│   └── category.go                   # Struct Category (Id, Name)
+├── helper/
+│   ├── hello_world.go                # Fungsi HelloWorld dan HelloTayo
+│   └── helllo_world_test.go          # Berbagai contoh test dan benchmark
+├── repository/
+│   ├── category_repository.go        # Interface CategoryRepository
+│   └── category_repository_mock.go   # Mock repository (testify/mock)
+├── service/
+│   ├── category_service.go           # CategoryService.Get(id)
+│   └── category_service_test.go      # Unit test dengan mock
+├── go.mod
+└── go.sum
+```
 
-## Description
+## Prasyarat
 
-- `helper/hello_world.go`: Contains the implementation of the `HelloWorld` and `HelloTayo` functions.
-- `helper/hello_world_test.go`: Contains unit tests for the `HelloWorld` and `HelloTayo` functions.
+- [Go](https://go.dev/dl/) versi 1.21.5 atau lebih baru
 
-## Functions
+## Instalasi
 
-### HelloWorld
-```go
-func HelloWorld(name string) string
+```bash
+git clone <url-repository-kamu>
+cd go-unit-test
+go mod tidy
+```
 
-Returns a greeting message by appending "hello" to the given name.
+`go mod tidy` akan mengunduh dependensi seperti `testify` dan merapikan `go.mod`.
 
-HelloTayo
+## Menjalankan Test
 
-Running Tests
-To run the tests, use the following command:
+Semua test di seluruh package:
 
+```bash
 go test ./...
+```
 
-Requirements
-Go 1.21.5 or higher
+Dengan output rinci (verbose):
+
+```bash
+go test -v ./...
+```
+
+Satu package saja:
+
+```bash
+go test -v ./helper
+go test -v ./service
+```
+
+Satu fungsi test tertentu:
+
+```bash
+go test -v -run TestHelloWorld ./helper
+```
+
+Satu subtest tertentu:
+
+```bash
+go test -v -run TestSubTest/subtest1 ./helper
+```
+
+Dengan laporan cakupan (coverage):
+
+```bash
+go test -cover ./...
+```
+
+## Menjalankan Benchmark
+
+Semua benchmark (test biasa dilewati):
+
+```bash
+go test -v -run=NONE -bench=. ./helper
+```
+
+Satu benchmark tertentu:
+
+```bash
+go test -v -run=NONE -bench=BenchmarkHelloWorld ./helper
+```
+
+Dengan informasi alokasi memori:
+
+```bash
+go test -v -run=NONE -bench=. -benchmem ./helper
+```
+
+## Materi yang Dicakup
+
+### Package `helper`
+
+Contoh dasar unit test pada fungsi sederhana:
+
+| Materi | Fungsi |
+| --- | --- |
+| Test dasar dengan `t.Error` | `TestHelloWorld` |
+| Menghentikan test dengan `t.Fatal` | `TestHelloTayo` |
+| Assertion dengan `assert` | `TestHelloWorldAssert` |
+| Assertion dengan `require` (menghentikan test saat gagal) | `TestHelloWorldRequire` |
+| Melewati test dengan `t.Skip` | `TestSkip` |
+| Kode sebelum dan sesudah semua test dengan `TestMain` | `TestMain` |
+| Subtest dengan `t.Run` | `TestSubTest` |
+| Table test | `TestTableHelloWorld` |
+| Benchmark, sub-benchmark, dan table benchmark | `BenchmarkHelloWorld`, `BenchmarkHelloTayo`, `BenchmarkSub`, `BenchmarkTable` |
+
+### Package `service` dan `repository`
+
+Contoh **mocking** dengan `testify/mock`:
+
+- `CategoryRepository` adalah interface dengan method `FindById(id string) *entity.Category`.
+- `CategoryRepositoryMock` adalah implementasi palsu dari interface tersebut, dipakai khusus untuk test.
+- `CategoryService.Get(id)` memanggil repository. Jika kategori tidak ditemukan, hasilnya `nil` dan error `category not found`.
+
+Contoh penggunaan mock pada test:
+
+```go
+var categoryRepository = &repository.CategoryRepositoryMock{Mock: mock.Mock{}}
+var categoryService = CategoryService{Repository: categoryRepository}
+
+func TestCategoryService_Get(t *testing.T) {
+	// Atur mock: FindById("1") mengembalikan nil
+	categoryRepository.Mock.On("FindById", "1").Return(nil)
+
+	category, err := categoryService.Get("1")
+	assert.Nil(t, category)
+	assert.NotNil(t, err)
+}
+```
+
+## Catatan
+
+- `TestSkip` sengaja dilewati selain di Windows (`runtime.GOOS != "windows"`).
+- `TestMain` menampilkan teks "Before test" dan "After test" di sekitar semua test dalam package `helper`.
+
+## Dependensi
+
+- [github.com/stretchr/testify](https://github.com/stretchr/testify) (`assert`, `require`, `mock`)
