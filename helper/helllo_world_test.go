@@ -103,3 +103,58 @@ func TestTableHelloWorld(t *testing.T) {
 		})
 	}
 }
+
+// benchmak
+func BenchmarkHelloWorld(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		HelloWorld(" world")
+	}
+}
+
+func BenchmarkHelloTayo(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		HelloTayo("tayo")
+	}
+}
+
+// sub-benchmark
+func BenchmarkSub(b *testing.B) {
+	b.Run("sub-benchmark1", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			HelloWorld(" world")
+		}
+	})
+	b.Run("sub-benchmark2", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			HelloTayo("tayo")
+		}
+	})
+}
+
+// table benchmark
+func BenchmarkTable(b *testing.B) {
+	benchmarks := []struct {
+		name     string
+		request  string
+		expected string
+	}{
+		{
+			name:     "sub-benchmark1",
+			request:  " world",
+			expected: "hello world",
+		},
+		{
+			name:     "sub-benchmark2",
+			request:  " tayo",
+			expected: "hello tayo",
+		},
+	}
+	for _, benchmark := range benchmarks {
+		b.Run(benchmark.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				result := HelloWorld(benchmark.request)
+				require.Equal(b, benchmark.expected, result, "result should be "+benchmark.expected)
+			}
+		})
+	}
+}
